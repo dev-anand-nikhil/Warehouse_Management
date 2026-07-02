@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: freshtrack
+      POSTGRES_USER: freshtrack
+      POSTGRES_PASSWORD: freshtrack
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql+psycopg2://freshtrack:freshtrack@db:5432/freshtrack
+      JWT_SECRET: supersecret
+      JWT_EXPIRATION_MINUTES: '60'
+    ports:
+      - '8000:8000'
+    volumes:
+      - ./app:/src/app
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - '5173:5173'
+
+volumes:
+  postgres_data:
